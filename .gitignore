@@ -1,11 +1,11 @@
-﻿.env
+.env
 **/.env
 **/secrets.h
 .venv/
 **/__pycache__/
 *.pyc
-pi-brain/captures/
-!pi-brain/captures/.gitkeep
+pi-brain/captures/*
+!pi-brain/captures/*.gitkeep
 *.stl
 .DS_Store
 Thumbs.db
