@@ -25,7 +25,7 @@ class PDF(FPDF):
         self.cell(
             0,
             10,
-            f"Page {self.page_no()}/{{nb}}  |  Pi 3 B+ brain  |  ESP32-WROOM I/O  |  v1",
+            f"Page {self.page_no()}/{{nb}}  |  Pi 3 B+ + ESP32-CAM + ESP32-WROOM  |  v1",
             align="C",
         )
 
@@ -88,9 +88,9 @@ def main() -> None:
     pdf.cell(0, 10, "Buddy AI - Hardware Pin Map", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 10)
     pdf.body(
-        "Locked stack: Raspberry Pi 3 B+ (brain + Pi Camera), ESP32-WROOM (motors, "
-        "pan-tilt servos, distance sensor), Bluetooth speaker (voice out), "
-        "phone/laptop mic for v1 (no onboard mic yet). ESP32-CAM is spare / not required."
+        "Locked stack: Raspberry Pi 3 B+ (brain), ESP32-CAM (eyes over Wi-Fi), "
+        "ESP32-WROOM (motors, pan-tilt servos, distance sensor), Bluetooth speaker "
+        "(voice out), phone/laptop mic for v1. No Raspberry Pi Camera Module."
     )
 
     pdf.section("1. Power")
@@ -98,24 +98,41 @@ def main() -> None:
         ["From", "To", "Notes"],
         [
             ["Pi 5V PSU / power bank", "Pi 3 B+ power input", "Do not power motors from the Pi"],
+            ["5V supply (>=500mA)", "ESP32-CAM 5V + GND", "Prefer solid 5V; weak USB can brown out"],
             ["Motor battery (+)", "Motor driver VS / VCC motor", "Match motor voltage (often 6-12V)"],
             ["Motor battery (-)", "Motor driver GND", ""],
             ["Regulated 5V", "ESP32-WROOM VIN / 5V", "Buck from motor pack if needed"],
-            ["ESP32 GND", "Driver GND", "Must share ground with driver"],
+            ["ESP32-WROOM GND", "Driver GND", "Must share ground with driver"],
             ["Servo 5V supply", "Servo red wires", "Do NOT use ESP32 3.3V for servos"],
-            ["Servo GND", "ESP32 GND", "Common ground"],
+            ["Servo GND", "ESP32-WROOM GND", "Common ground"],
             ["Ultrasonic VCC", "5V", "HC-SR04 prefers 5V"],
-            ["Ultrasonic GND", "ESP32 GND", "Common ground"],
+            ["Ultrasonic GND", "ESP32-WROOM GND", "Common ground"],
         ],
         [55, 60, 75],
     )
 
-    pdf.section("2. Pi Camera -> Raspberry Pi 3 B+")
+    pdf.section("2. ESP32-CAM (eyes) - AI-Thinker style")
     pdf.body(
-        "Use the CSI ribbon cable into the CSI connector (between HDMI and audio). "
-        "No GPIO pins. Enable camera in raspi-config / use libcamera. "
-        "Orient the ribbon per the official Pi Camera guide "
-        "(contacts toward HDMI on most Pi 3 setups)."
+        "Camera pins are fixed on the module (firmware uses CAMERA_MODEL_AI_THINKER). "
+        "You only wire power + Wi-Fi credentials. Pi fetches JPEG from http://CAM_IP/capture."
+    )
+    pdf.table(
+        ["ESP32-CAM", "Connect to"],
+        [
+            ["5V", "5V supply (>=500mA)"],
+            ["GND", "Power GND"],
+            ["Wi-Fi", "Same network as Pi 3 B+ and ESP32-WROOM"],
+            ["FTDI RX/TX/GPIO0", "Only when flashing firmware"],
+        ],
+        [50, 140],
+    )
+    pdf.body(
+        "Do not attach motors to the CAM board. Mount CAM on pan-tilt mast; "
+        "servos are driven by ESP32-WROOM, not the CAM."
+    )
+    pdf.body(
+        "After boot, serial monitor @ 115200 prints CAM IP. Set pi-brain .env CAM_URL "
+        "to http://THAT_IP (capture path is /capture, stream on port 81 /stream)."
     )
 
     pdf.section("3. ESP32-WROOM -> Motor driver (firmware defaults)")
@@ -143,7 +160,7 @@ def main() -> None:
     pdf.table(
         ["Servo wire", "Connect to"],
         [
-            ["Brown / Black (GND)", "ESP32 GND"],
+            ["Brown / Black (GND)", "ESP32-WROOM GND"],
             ["Red (VCC)", "External 5V"],
             ["Orange / Yellow signal - Pan", "GPIO 18"],
             ["Orange / Yellow signal - Tilt", "GPIO 19"],
@@ -154,7 +171,7 @@ def main() -> None:
     pdf.section("5. Distance sensor -> ESP32-WROOM")
     pdf.body("HC-SR04 ultrasonic (recommended defaults):")
     pdf.table(
-        ["HC-SR04", "ESP32"],
+        ["HC-SR04", "ESP32-WROOM"],
         [
             ["VCC", "5V"],
             ["GND", "GND"],
@@ -165,7 +182,7 @@ def main() -> None:
     )
     pdf.body("If using VL53L0X ToF instead:")
     pdf.table(
-        ["VL53L0X", "ESP32"],
+        ["VL53L0X", "ESP32-WROOM"],
         [
             ["VCC", "3.3V"],
             ["GND", "GND"],
@@ -183,12 +200,26 @@ def main() -> None:
             ["Bluetooth speaker", "Pair in Raspberry Pi OS (voice out)"],
             ["Phone / laptop mic (v1)", "Wi-Fi to Pi web UI / POST /command"],
             ["ReSpeaker 2-Mic HAT (next version)", "Onboard voice-in - not wired in v1"],
-            ["ESP32-CAM", "Spare - not required when using Pi Camera"],
+            ["Pi Camera Module", "Not used - you do not have one"],
         ],
         [80, 110],
     )
 
-    pdf.section("7. ESP32-WROOM pin summary")
+    pdf.section("7. Network map")
+    pdf.table(
+        ["Device", "Role", "Example"],
+        [
+            ["Pi 3 B+", "Brain", "Runs pi-brain; opens :8080"],
+            ["ESP32-CAM", "Eyes", "http://192.168.x.y/capture"],
+            ["ESP32-WROOM", "Motors/servos/sensor", "http://192.168.x.z/cmd"],
+        ],
+        [45, 55, 90],
+    )
+    pdf.body(
+        "All three must be on the same Wi-Fi. Put CAM_URL and MOTOR_URL in pi-brain/.env."
+    )
+
+    pdf.section("8. ESP32-WROOM pin summary")
     pdf.table(
         ["GPIO", "Function"],
         [
@@ -208,17 +239,19 @@ def main() -> None:
         [40, 150],
     )
 
-    pdf.section("8. Safety notes")
+    pdf.section("9. Safety notes")
     pdf.body(
         "- Never feed motor current through the Pi 5V rail.\n"
-        "- Share GND between ESP32, motor driver logic, servos, and sensors.\n"
+        "- Give ESP32-CAM a solid 5V supply (brownouts cause Wi-Fi drops / bad images).\n"
+        "- Share GND between ESP32-WROOM, motor driver logic, servos, and sensors.\n"
         "- Level-shift HC-SR04 ECHO (5V) down to 3.3V for ESP32 safety when possible.\n"
         "- Servos need a solid 5V supply; brownouts cause random resets.\n"
-        "- Put Pi 3 B+ and ESP32-WROOM on the same Wi-Fi network."
+        "- Put Pi 3 B+, ESP32-CAM, and ESP32-WROOM on the same Wi-Fi network."
     )
 
-    pdf.section("9. Firmware / config references")
+    pdf.section("10. Firmware / config references")
     pdf.body(
+        "Camera firmware: esp32-cam/\n"
         "Motor pins: esp32-motor/config.h\n"
         "Wiring notes: docs/wiring.md\n"
         "Repo: https://github.com/AnuragShirodkar/Buddy-AI"

@@ -6,7 +6,7 @@ Open these in [OpenSCAD](https://openscad.org/), press **F6** (Render), then **F
 |------|------|
 | [`chassis.scad`](chassis.scad) | Differential-drive base, motor cutouts, battery straps, ESP/driver holes |
 | [`pi_tray.scad`](pi_tray.scad) | Pi 3 B+ standoffs + power-bank pocket + vents |
-| [`camera_mast.scad`](camera_mast.scad) | Forward CAM mount (~110 mm mast). Set `use_pan_tilt = true` for servo spacer |
+| [`camera_mast.scad`](camera_mast.scad) | Forward **ESP32-CAM** mount (~110 mm mast). Set `use_pan_tilt = true` for servo spacer |
 | [`cable_clip.scad`](cable_clip.scad) | Wire clips |
 
 ## Print settings (starting point)

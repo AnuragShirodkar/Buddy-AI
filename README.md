@@ -1,6 +1,8 @@
 # ESP AI Finder Robot
 
-Voice-driven finder robot: **Raspberry Pi 3 B+** brain, **ESP32-CAM** eyes, **ESP32-WROOM** motors, phone/laptop mic for commands, Bluetooth speaker for replies.
+Voice-driven finder robot: **Raspberry Pi 3 B+** brain, **ESP32-CAM** eyes (no Pi Camera), **ESP32-WROOM** motors/servos, phone/laptop mic for commands, Bluetooth speaker for replies.
+
+Pin map PDF: [`docs/Buddy_AI_Pin_Connections.pdf`](docs/Buddy_AI_Pin_Connections.pdf).
 
 ## Repo layout
 
